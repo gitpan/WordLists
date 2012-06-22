@@ -17,7 +17,9 @@ sub complex_compare
 	my $args = $_[2];
 	if ( (defined $args) && (ref $args eq ref {}) )
 	{
-		return 0 if (($_[0] eq $_[1]) and !$args->{'override_eq'}); # avoid excessive execution of code if possible
+		return 0 if (!$args->{'override_undef'} and !defined($_[0]) and !defined ($_[1])); # avoid excessive execution of code if possible
+		return (defined($_[0]) <=> defined ($_[1])) if (!$args->{'override_undef'} and (!defined($_[0]) or !defined ($_[1])) ); # avoid excessive execution of code if possible
+		return 0 if (!$args->{'override_eq'} and ($_[0] eq $_[1])); # avoid excessive execution of code if possible
 		if ( (defined $args->{'functions'}) && (ref $args->{'functions'} eq ref []) )
 		{
 			my @functions = @{$args->{'functions'}};
@@ -37,7 +39,9 @@ sub complex_compare
 	else
 	{
 		warn 'Expected: $a, $b, {...}' if defined $args;
-		return $_[0] cmp $_[1] if exists $_[1];
+		return 0 if (!defined($_[0]) and !defined ($_[1])); # avoid excessive execution of code if possible
+		return (defined($_[0]) <=> defined ($_[1])) if ((!defined($_[0]) or !defined ($_[1])) ); # avoid excessive execution of code if possible
+		return $_[0] cmp $_[1];
 	}
 	return 0;
 }
@@ -58,6 +62,9 @@ sub atomic_compare
 	my $args = $_[2];
 	if ( (defined $args) && (ref $args eq ref {}) )
 	{
+		return 0 if (!$args->{'override_undef'} and !defined($_[0]) and !defined ($_[1])); # avoid excessive execution of code if possible
+		return (defined($_[0]) <=> defined ($_[1])) if (!$args->{'override_undef'} and (!defined($_[0]) or !defined ($_[1])) ); # avoid excessive execution of code if possible
+		return 0 if (!$args->{'override_eq'} and ($_[0] eq $_[1])); # avoid excessive execution of code if possible	if ( (defined $args) && (ref $args eq ref {}) )
 		my %arg = (
 			'c' => sub { $_[0] cmp $_[1]; },
 			't' => [],
@@ -141,7 +148,9 @@ sub atomic_compare
 	else
 	{
 		warn 'Expected: $a, $b, {...}' if defined $args;
-		return $_[0] cmp $_[1] if defined $_[1];
+		return 0 if (!defined($_[0]) and !defined ($_[1])); # avoid excessive execution of code if possible
+		return (defined($_[0]) <=> defined ($_[1])) if ((!defined($_[0]) or !defined ($_[1])) ); # avoid excessive execution of code if possible
+		return $_[0] cmp $_[1];
 	}
 	return 0;
 }

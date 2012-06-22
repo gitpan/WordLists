@@ -1,5 +1,8 @@
 Revision history for WordLists
 
+0.011	2012-06-22
+		Added Definedness checks to WordLists::Sort
+
 0.010	2012-06-13
 		Tidied for CPAN.
 

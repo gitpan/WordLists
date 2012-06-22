@@ -17,6 +17,14 @@ ok(
 	'a sorts before aa' 
 );
 ok( 
+	atomic_compare(undef, undef) == 0, 
+	'atomic_compare(undef, undef) == 0' 
+);
+ok( 
+	atomic_compare(undef, 1) == -1, 
+	'atomic_compare(undef, 1) == -1' 
+);
+ok( 
 	atomic_compare('b', 'a') == 1, 
 	'a sorts before b, even if a is first' 
 );

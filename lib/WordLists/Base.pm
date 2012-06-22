@@ -1,7 +1,7 @@
 ﻿package WordLists::Base;
 use strict;
 use utf8;
-our $VERSION   = '0.010';
+our $VERSION   = '0.011';
 
 #TODO: Copy stuff over from WordLists::Common
 

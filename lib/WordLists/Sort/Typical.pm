@@ -18,6 +18,7 @@ our @EXPORT_OK = qw(
 	cmp_ver
 	cmp_dict
 );
+sub _cmp { $_[0] cmp $_[1] };
 
 sub cmp_dict
 {
@@ -38,7 +39,7 @@ sub cmp_dict
 				},
 				{
 					n => sub{&{$norm_remove_the}($_[0]); $_[0] =~ s/[^\p{Script: Latin}0-9]/ /g; $_[0] =~ s/[a-z\p{Lowercase}]/ /g; $_[0];},
-					c => sub { $_[0] cmp $_[1] },
+					c => \&_cmp,
 				},
 				{
 					n => $norm_remove_the,
@@ -51,15 +52,15 @@ sub cmp_dict
 				},
 				{
 					n => sub{&{$norm_remove_the}($_[0]); $_[0] =~ s/[^\p{Script: Latin}0-9]/ /g; $_[0] =~ s/[a-zA-Z]/ /g; $_[0];},
-					c => sub { $_[0] cmp $_[1] },
+					c => \&_cmp,
 				},
 				{
 					n => sub{&{$norm_remove_the}($_[0]); $_[0] =~ s/[\P{Uppercase}]/ /g; $_[0];},
-					c => sub { $_[0] cmp $_[1] },
+					c => \&_cmp,
 				},
 				{
 					n => sub { &{$norm_remove_the}($_[0]); $_[0]=~ s/[^\p{Script: Latin}0-9]//g; $_[0];},
-					c => sub {$_[0] cmp $_[1]},
+					c => \&_cmp,
 				},
 				{
 					n => $norm_remove_the,

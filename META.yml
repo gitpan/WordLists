@@ -24,4 +24,4 @@ requires:
   Lingua::EN::Tagger: 0
   Test::More: 0
   Unicode::Normalize: 0
-version: 0.010
+version: 0.011
