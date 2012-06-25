@@ -14,6 +14,8 @@ WriteMakefile(
     PREREQ_PM  => {
         'JSON' => 0,
         'Test::More' => 0,
+        'Test::Deep' => 0,
+        'Storable' => 0,
         'Lingua::EN::Tagger' => 0,
         'Unicode::Normalize' => 0,
         'Data::Dumper' => 0,

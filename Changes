@@ -1,5 +1,8 @@
 Revision history for WordLists
 
+0.012	2012-06-25
+		Added collation tools to WordLists::Sort
+
 0.011	2012-06-22
 		Added Definedness checks to WordLists::Sort
 

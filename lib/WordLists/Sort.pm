@@ -10,6 +10,8 @@ our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(
 	complex_compare
 	atomic_compare
+	sorted_collate
+	schwartzian_collate
 );
 
 sub complex_compare
@@ -155,6 +157,101 @@ sub atomic_compare
 	return 0;
 }
 
+sub sorted_collate # Sorted Collation - hopefully O n log (n)
+{
+	my ( $aIn, $cmp, $merge) = @_;
+	#   ^ + $self
+	my $iEnum=0;
+	my $aEnum = [map {[ $iEnum++ , $_]; } @$aIn];
+	my $aSorted = [sort {&{$cmp}($a->[1],$b->[1])} @$aEnum];
+	
+	for (my $i = 0; $i<$#{$aSorted}; $i++)
+	{
+		next unless defined $aSorted->[$i][1] ;
+		for (my $j = 1; $j<=$#{$aSorted}-$i; $j++)
+		{
+			if (defined $aSorted->[$i+$j][1])
+			{
+				if (0 == &{$cmp}($aSorted->[$i][1], $aSorted->[$i+$j][1]))
+				{
+					&{$merge}($aSorted->[$i][1], $aSorted->[$i+$j][1]);
+					$aSorted->[$i+$j][1] = undef;
+				}
+				else
+				{	$i += $j - 1;
+					last; # last j === next i
+				}
+			}
+		}
+	}
+	return [map {$_->[1]} sort { $a->[0] <=> $b->[0] } grep { defined $_->[1] } @$aSorted];
+}
+sub schwartzian_collate # Schwartzian Collation - hopefully O n log (n), but less than sorted collation, if $norm is slow
+{
+	my ( $aIn, $cmp, $norm, $merge) = @_;
+	#   ^ + $self
+	my $iEnum=0;
+	my $aEnum;
+	my $aSorted;
+	if (defined $norm)
+	{
+		$aEnum = [map {[ $iEnum++ , $_, &{$norm}($_)]; } @$aIn];
+		$aSorted = [sort {&{$cmp}($a->[2],$b->[2])} @$aEnum];
+	}
+	else
+	{
+		$aEnum = [map {[ $iEnum++ , $_]; } @$aIn];
+		$aSorted = [sort {&{$cmp}($a->[1],$b->[1])} @$aEnum];
+	}
+	for (my $i = 0; $i<$#{$aSorted}; $i++)
+	{
+		next unless defined $aSorted->[$i][1] ;
+		for (my $j = 1; $j<=$#{$aSorted}-$i; $j++)
+		{
+			if (defined $aSorted->[$i+$j][1])
+			{
+				if (
+					(defined $norm) ? 
+					( 0 == &{$cmp}($aSorted->[$i][2], $aSorted->[$i+$j][2]) ) :
+					( 0 == &{$cmp}($aSorted->[$i][1], $aSorted->[$i+$j][1]) ) 
+				)
+				{
+					&{$merge}($aSorted->[$i][1], $aSorted->[$i+$j][1]);
+					$aSorted->[$i+$j][1] = undef;
+				}
+				else
+				{	$i += $j - 1;
+					last; # last j === next i
+				}
+			}
+		}
+	}
+	return [map {$_->[1]} sort { $a->[0] <=> $b->[0] } grep { defined $_->[1] } @$aSorted];
+}
+sub naive_collate # Naive Collation - probably O n**2
+{
+	my ( $aIn, $cmp, $merge) = @_;
+	#   ^ + $self
+	my $iEnum = 0;
+	my $aEnum = [map {[$iEnum++,$_]} @$aIn];
+	for (my $i = 0; $i<$#{$aEnum}; $i++)
+	{
+		next unless defined $aEnum->[$i][1] ;
+		for (my $j = 1; $j<=$#{$aEnum}-$i; $j++)
+		{
+			if (defined $aEnum->[$i+$j][1])
+			{
+				if (0 == &{$cmp}($aEnum->[$i][1], $aEnum->[$i+$j][1]))
+				{
+					&{$merge}($aEnum->[$i][1], $aEnum->[$i+$j][1]);
+					$aEnum->[$i+$j][1] = undef;
+				}
+			}
+		}
+	}
+	return [map {$_->[1]} grep { defined $_->[1] } @$aEnum];
+}
+
 return 1;
 
 =pod
@@ -277,7 +374,24 @@ C<functions>: In <complex_compare>, an arrayref containing a hashref equivalent 
 		]
 	})
 
+=head2 naive_collate
 
+Performs a collation on an arrayref. Provide a) the data, b) a comparison function which returns 0 if the two comparands are duplicates, and c) a merge function which takes the first and later duplicate.
+
+NB: This is slow, use either C<sorted_collate> or C<schwartzian_collate> unless you have a good reason for using this function (e.g. your comparison function is unstable and doesn't function like C<cmp>). To discourage casual use, it is not exported.
+
+=head2 sorted_collate
+
+Like C<naive_collate>, but faster. 
+
+It is faster because rather than comparing every element against every other element that hasn't already been collated, it sorts once first, then compares against following elements until it finds one which doesn't match, then stops. The list is then returned to its original order (except without the duplicates).
+
+=head2 schwartzian_collate
+
+Like C<sorted_collate>, but uses a Schwartzian transform: after the comparison function, provide a normalisation function. 
+
+It is about as fast as the C<naive_collate>, but can be several times faster when the normalisation function is complex.
+	
 =head1 TODO
 
 =over
@@ -308,7 +422,7 @@ Possibly remove assumptions about the comparanda, i.e. permit comparison of obje
 
 =item *
 
-Figure out how to get this to work as a Schwartzian transform. 
+Figure out how to get C<atomic_compare> and C<complex_compare> to work with Schwartzian transforms.
 
 =back
 

@@ -2,7 +2,10 @@
 use strict;
 use utf8;
 use Test::More;
-use WordLists::Sort qw( atomic_compare complex_compare);
+use Test::Deep;
+use Storable qw(dclone);
+
+use WordLists::Sort qw( atomic_compare complex_compare sorted_collate schwartzian_collate);
 
 ok( 
 	('a' cmp 'b') == -1, 
@@ -87,6 +90,48 @@ ok(
 ok(
 	test_complex_compare('ab','ab') == 0, 
 	'complex_compare: ab=ab'
+);
+
+# Collation tests...
+
+my $cCmp = sub{ lc ($_[1]->{'hw'}) cmp lc ($_[0]->{'hw'}) };
+my $cSchCmp = sub{ $_[1] cmp $_[0] };
+my $cSchNorm = sub{ return lc ($_[0]->{'hw'}); };
+my $cMerge = sub{ $_[0]->{'pos'} .= ', '. $_[1]->{'pos'} };
+
+use Data::Dumper;
+sub ok_collate
+{
+	my ($data, $expected, $why) = @_;
+	$why ||='';
+	cmp_deeply(WordLists::Sort::naive_collate(dclone ($data), $cCmp, $cMerge), $expected, $why.' (using naive_collate)');
+	cmp_deeply(sorted_collate(dclone ($data), $cCmp, $cMerge), $expected, $why.' (using sorted_collate)');
+	cmp_deeply(schwartzian_collate(dclone ($data), $cSchCmp, $cSchNorm, $cMerge), $expected, $why.' (using schwartzian_collate)');
+}
+
+ok_collate(
+	[{hw=>'a', pos=>'det'}, {hw=>'A', pos=>'n'}]
+	, 
+	[{hw=>'a', pos=>'det, n'}],
+	'collation test with collation'
+);
+ok_collate(
+	[{hw=>'a', pos=>'det'}]
+	, 
+	[{hw=>'a', pos=>'det'}],
+	'collation test with only one element'
+);
+ok_collate(
+	[{hw=>'a', pos=>'det'}, {hw=>'B', pos=>'n'}]
+	, 
+	[{hw=>'a', pos=>'det'}, {hw=>'B', pos=>'n'}],
+	'collation test with no collation'
+);
+ok_collate(
+	[{hw=>'a', pos=>'det'}, {hw=>'A', pos=>'n'}, {hw=>'A', pos=>'excl'}]
+	, 
+	[{hw=>'a', pos=>'det, n, excl'}],
+	'collation test with multiple collation'
 );
 # todo: write more tests, for things like 't' and 'c'.
 # todo: test complex_compare.

@@ -36,11 +36,13 @@
             "IO::File" : 0,
             "JSON" : 0,
             "Lingua::EN::Tagger" : 0,
+            "Storable" : 0,
+            "Test::Deep" : 0,
             "Test::More" : 0,
             "Unicode::Normalize" : 0
          }
       }
    },
    "release_status" : "stable",
-   "version" : "0.011"
+   "version" : "0.012"
 }
