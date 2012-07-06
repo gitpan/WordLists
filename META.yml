@@ -26,4 +26,4 @@ requires:
   Test::Deep: 0
   Test::More: 0
   Unicode::Normalize: 0
-version: 0.012
+version: 0.013

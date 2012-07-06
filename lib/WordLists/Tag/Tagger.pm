@@ -11,7 +11,7 @@ our $VERSION = $WordLists::Base::VERSION;
 
 our $AUTOLOAD;
 our @ignore_pos_codes = qw(cd to prp prps sym pp pps ppr lrb rrb ppc ppl );
-sub norm_word($)
+sub _norm_word($)
 {
 	my $s = shift;
 	$s=~s/\.//g;
@@ -77,6 +77,21 @@ sub add_tags
 	my $taggedMS = $self->{tagger}->add_tags( $sMS );
 	return $taggedMS;
 }
+
+sub add_human_tags
+{
+	my ($self, $sMS) = @_;
+	my  $sMSOUT = '';
+	foreach my $sSentence (@{$self->{tagger}->get_sentences($sMS)})
+	{
+		$sSentence =~ tr/<>&//d;
+		my $taggedSentence = $self->{tagger}->add_tags( $sSentence );
+		$taggedSentence =~ s`<([a-z]+)>([^<]+)</\1>`human_pos($1) ne $1 ? qq(<span pos=").human_pos($1).qq(">$2</span>) : $2;`ge;
+		$sMSOUT .= "<p>$taggedSentence</p> ";
+	}
+	return $sMSOUT;
+}
+
 sub get_wordlist
 {
 	my ($self, $sUntagged, $args) = @_;
@@ -97,7 +112,7 @@ sub get_wordlist
 		while ($taggedMS =~ m`<([a-z]+)>([^<]+)</\1>`g)
 		{
 			#print "\n$1\t$2";
-			my $sHW = norm_word($2);
+			my $sHW = _norm_word($2);
 			my $sPosCode = $1;
 			my $bNext;
 			foreach (@ignore_pos_codes) #
@@ -150,10 +165,16 @@ WordLists::Tag::Tagger
 
 =head1 SYNOPSIS
 	
-	my $tagger = WordLists::Tag->new();
-	my $wl = get_wordlist('The quick brown fox jumped over the lazy dog');
+	my $tagger = WordLists::Tag::Tagger->new();
+	my $wl = $tagger->get_wordlist('The quick brown fox jumped over the lazy dog');
 
 =head1 DESCRIPTION
+
+Uses L<Lingua::EN::Tagger> to do various things with strings, chielfly to create a L<WordLists::WordList> out of a document, e.g. to use as a basis for a glossary.
+
+=head1 METHODS
+
+=head3 get_wordlist
 
 Uses L<Lingua::EN::Tagger> to create a L<WordLists::WordList> out of a string (e.g. a manuscript).
 
@@ -162,8 +183,6 @@ L<Lingua::EN::Tagger> allows splitting into sentences, and these sentences becom
 Only the first instance of each headword / part of speech combination is entered into the list, unless the third argument has a key C<keep_repeats> with a true value.
 
 The fields populated are: C<hw>, C<pos>, C<eg>, and C<poscode>, which is the original part of speech code outputted by the tagger.
-
-=head1 OPTIONS
 
 The third argument is a hashref which allows you to configure several options.
 
@@ -175,7 +194,7 @@ C<keep_repeats> is a flag, which, if set, prevents the code from removing repeti
 
 =head1 TODO
 
-C<ignore> is an arrayref whose elements are L<WordLists::Sense> objects or plain hashrefs of the form C<< {hw=>'head', pos =>'n'} >>, or headwords as strings. If these words are found, they are not added to the list. (not yet implemented!)
+C<ignore> is a wordlist or arrayref whose elements are L<WordLists::Sense> objects or plain hashrefs of the form C<< {hw=>'head', pos =>'n'} >>, or headwords as strings. If these words are found, they are not added to the list. (not yet implemented!)
 
 =head1 BUGS
 
